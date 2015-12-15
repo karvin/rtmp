@@ -11,4 +11,6 @@ public interface ChunkStream {
 
     int write(Chunk chunk);
 
+    int getChunkStreamId();
+
 }
