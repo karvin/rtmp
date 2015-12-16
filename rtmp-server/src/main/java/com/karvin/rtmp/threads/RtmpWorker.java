@@ -10,7 +10,7 @@ public class RtmpWorker implements Runnable {
     private RtmpConnection rtmpConnection;
 
 
-    public RtmpWorker(RtmpConnection rtmpConnection){
+    public RtmpWorker(RtmpConnection rtmpConnection) {
         this.rtmpConnection = rtmpConnection;
     }
 

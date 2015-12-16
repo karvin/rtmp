@@ -17,7 +17,7 @@ import java.net.Socket;
  */
 public class RtmpConnectionImpl implements RtmpConnection {
 
-    private InetAddress remoteAddress;
+    private InetSocketAddress remoteAddress;
     private InetAddress localAddress;
     private Socket socket;
     private RtmpRequest request;
@@ -26,11 +26,16 @@ public class RtmpConnectionImpl implements RtmpConnection {
 
     public RtmpConnectionImpl(Socket socket){
         this.socket = socket;
-        this.remoteAddress = ((InetSocketAddress)socket.getRemoteSocketAddress()).getAddress();
+        this.remoteAddress = ((InetSocketAddress)socket.getRemoteSocketAddress());
         this.localAddress = socket.getLocalAddress();
     }
 
-    public InetAddress getRemoteAddress() {
+    public RtmpConnectionImpl(String host,int port){
+        this.socket = new Socket();
+        this.remoteAddress = new InetSocketAddress(host,port);
+    }
+
+    public InetSocketAddress getRemoteAddress() {
         return remoteAddress;
     }
 
@@ -62,6 +67,10 @@ public class RtmpConnectionImpl implements RtmpConnection {
         return this.response;
     }
 
+    public void connect() throws IOException {
+        socket.connect(remoteAddress);
+    }
+
     public void close() throws IOException {
         socket.close();
         if(closeHandler != null){
@@ -71,5 +80,9 @@ public class RtmpConnectionImpl implements RtmpConnection {
 
     public CloseHandler getCloseHandler() {
         return closeHandler;
+    }
+
+    public void setCloseHandler(CloseHandler closeHandler){
+        this.closeHandler = closeHandler;
     }
 }
