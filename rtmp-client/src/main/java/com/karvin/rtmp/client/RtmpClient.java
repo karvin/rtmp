@@ -31,8 +31,10 @@ public class RtmpClient {
 
     public static void main(String[] args){
         try {
-            RtmpClient rtmpClient = new RtmpClient("127.0.0.1",1935);
-            rtmpClient.connect();
+            for(int i=0;i<500;i++) {
+                RtmpClient rtmpClient = new RtmpClient("127.0.0.1", 1935);
+                rtmpClient.connect();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

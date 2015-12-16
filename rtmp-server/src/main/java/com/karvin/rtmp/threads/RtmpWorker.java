@@ -15,6 +15,6 @@ public class RtmpWorker implements Runnable {
     }
 
     public void run() {
-
+        //System.out.println("running:"+this.rtmpConnection.hashCode());
     }
 }

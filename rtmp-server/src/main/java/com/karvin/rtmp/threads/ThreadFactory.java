@@ -17,9 +17,7 @@ public class ThreadFactory {
 
     private RtmpThread[] busyThreads = new RtmpThread[max];
 
-    private List<Integer> idleThreads = new ArrayList<Integer>();
-
-    private Object[] threadLocks = new Object[max];
+    private List<ThreadIndex> idleThreads = new ArrayList<ThreadIndex>();
 
     private List<RtmpWorker> waitWorkers = new ArrayList<RtmpWorker>();
 
@@ -33,8 +31,7 @@ public class ThreadFactory {
 
     private ThreadFactory() {
         for(int i=0;i<max;i++){
-            idleThreads.add(i);
-            threadLocks[i] = new Object();
+            idleThreads.add(new ThreadIndex(i));
         }
     }
 
@@ -57,16 +54,17 @@ public class ThreadFactory {
                     waitLock.notify();
                 }
             } else {
-                int index = idleThreads.remove(0);
-                synchronized (threadLocks[index]) {
-                    RtmpThread thread = busyThreads[index];
-                    if (thread == null) {
-                        thread = new RtmpThread(worker, index);
-                        busyThreads[index] = thread;
-                    } else {
-                        thread.setWorker(worker);
-                    }
-                    threadLocks[index].notify();
+                ThreadIndex threadIndex = idleThreads.remove(0);
+                int index = threadIndex.index;
+                System.out.println("use thread "+index);
+                RtmpThread thread = busyThreads[index];
+                if (thread == null) {
+                    thread = new RtmpThread(worker,threadIndex);
+                    busyThreads[index] = thread;
+                    thread.start();
+                } else {
+                    thread.setWorker(worker);
+                    thread.dispatch();
                 }
                 current++;
                 busyCount++;
@@ -95,17 +93,16 @@ public class ThreadFactory {
                             synchronized (waitLock) {
                                 System.out.println("waiting one");
                                 RtmpWorker worker = waitWorkers.remove(0);
-                                int index = idleThreads.remove(0);
-                                synchronized (threadLocks[index]) {
-                                    RtmpThread thread = busyThreads[index];
-                                    if (thread == null) {
-                                        thread = new RtmpThread(worker, index);
-                                        busyThreads[index] = thread;
-                                        thread.start();
-                                    } else {
-                                        thread.setWorker(worker);
-                                        threadLocks[index].notify();
-                                    }
+                                ThreadIndex threadIndex = idleThreads.remove(0);
+                                int index = threadIndex.index;
+                                RtmpThread thread = busyThreads[index];
+                                if (thread == null) {
+                                    thread = new RtmpThread(worker,threadIndex);
+                                    busyThreads[index] = thread;
+                                    thread.start();
+                                } else {
+                                    thread.setWorker(worker);
+                                    thread.dispatch();
                                 }
                             }
                         } else {
@@ -129,16 +126,12 @@ public class ThreadFactory {
 
     private class RtmpThread extends Thread{
         private RtmpWorker worker;
+        private ThreadIndex threadIndex;
+        private Object lock = new Object();
 
-        private int index;
-
-        public RtmpThread(RtmpWorker worker,int index){
+        public RtmpThread(RtmpWorker worker,ThreadIndex threadIndex){
             this.worker = worker;
-            this.index = index;
-        }
-
-        public RtmpThread(int index){
-            this(null,index);
+            this.threadIndex = threadIndex;
         }
 
         public void setWorker(RtmpWorker worker){
@@ -146,20 +139,41 @@ public class ThreadFactory {
         }
 
         @Override
-        public void start(){
+        public void run(){
             while(true){
                 if(worker != null) {
+                    System.out.println("working thread:"+this.threadIndex.getIndex()+" worker:"+worker.hashCode());
                     worker.run();
                 }
-                synchronized (threadLocks[index]) {
+                synchronized (lock) {
                     try {
-                        idleThreads.add(index);
-                        threadLocks[index].wait();
+                        idleThreads.add(this.threadIndex);
+                        lock.wait();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
             }
+        }
+
+        public void dispatch(){
+            synchronized (lock){
+                idleThreads.remove(this.threadIndex);
+                lock.notify();
+            }
+        }
+
+    }
+
+    private class ThreadIndex{
+        private int index;
+
+        public ThreadIndex(int index){
+            this.index = index;
+        }
+
+        public int getIndex(){
+            return index;
         }
 
     }

@@ -64,6 +64,7 @@ public class RtmpServer {
                 RtmpConnection connection = new RtmpConnectionImpl(clientSocket);
                 connection.setCloseHandler(closeHandler);
                 RtmpWorker rtmpWorker = new RtmpWorker(connection);
+                System.out.println("new rtmp connection:"+rtmpWorker.hashCode());
                 ThreadFactory.getInstance().submit(rtmpWorker);
             } catch (Exception e) {
                 e.printStackTrace();
