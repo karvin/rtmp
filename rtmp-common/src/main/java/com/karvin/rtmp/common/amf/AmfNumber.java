@@ -1,5 +1,7 @@
 package com.karvin.rtmp.common.amf;
 
+import com.karvin.rtmp.common.utils.NumberUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,12 +24,13 @@ public class AmfNumber implements AmfData {
     }
 
     public void writeTo(OutputStream out) throws IOException {
-        out.write(SIZE);
+        out.write(AmfType.NUMBER.getValue());
+        NumberUtils.writeDouble(out,value);
     }
 
     public void readFrom(InputStream in) throws IOException {
-        in.read();
-
+        /*assume type has bee read*/
+        this.value = NumberUtils.readDouble(in);
     }
 
     public int getSize() {
